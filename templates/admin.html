@@ -26,8 +26,8 @@
 
         <div class="sidebar-card">
             <span class="mini-label">STATUS</span>
-            <h3>Agente ativo</h3>
-            <p>Monitorando atendimentos, intenções e leads capturados.</p>
+            <h3>Lead Tracking ativo</h3>
+            <p>Cada conversa agora é registrada como um possível lead, com dados, intenção e prioridade.</p>
         </div>
     </aside>
 
@@ -36,8 +36,8 @@
         <header class="dashboard-header">
             <div>
                 <span class="page-label">Painel administrativo</span>
-                <h1>Atendimentos do Agente IA</h1>
-                <p>Visão gerencial das conversas, prioridades e oportunidades comerciais.</p>
+                <h1>Leads e Conversas</h1>
+                <p>Visão organizada por cliente, não mais por mensagens soltas.</p>
             </div>
 
             <div class="header-actions">
@@ -48,15 +48,21 @@
 
         <section class="kpi-grid">
             <div class="kpi-card">
-                <span>Total de mensagens</span>
-                <strong>{{ total_mensagens }}</strong>
-                <p>Interações registradas</p>
+                <span>Total de conversas</span>
+                <strong>{{ total_conversas }}</strong>
+                <p>Atendimentos iniciados</p>
             </div>
 
             <div class="kpi-card">
-                <span>Leads detectados</span>
+                <span>Leads identificados</span>
                 <strong>{{ total_leads }}</strong>
-                <p>Nome ou telefone identificado</p>
+                <p>Nome ou telefone capturado</p>
+            </div>
+
+            <div class="kpi-card">
+                <span>Oportunidades</span>
+                <strong>{{ oportunidades }}</strong>
+                <p>Pedidos de venda/orçamento</p>
             </div>
 
             <div class="kpi-card">
@@ -64,30 +70,25 @@
                 <strong>{{ alta_prioridade }}</strong>
                 <p>Casos urgentes</p>
             </div>
-
-            <div class="kpi-card">
-                <span>Banco de dados</span>
-                <strong>SQLite</strong>
-                <p>Persistência local ativa</p>
-            </div>
         </section>
 
         <section class="analytics-grid">
             <div class="analytics-card">
-                <h3>Resumo operacional</h3>
+                <h3>Como o agente trabalha</h3>
                 <p>
-                    O agente registra cada atendimento, identifica a intenção da mensagem,
-                    classifica prioridade e captura dados de contato quando informados pelo cliente.
+                    O atendimento agora segue um fluxo mais controlado: primeiro identifica o cliente,
+                    depois coleta contato, entende a necessidade e classifica a conversa como venda,
+                    suporte, informação ou atendimento geral.
                 </p>
             </div>
 
             <div class="analytics-card">
-                <h3>Fluxos atendidos</h3>
+                <h3>Critérios de lead</h3>
                 <div class="flow-list">
-                    <span>Venda / Orçamento</span>
-                    <span>Suporte Técnico</span>
-                    <span>Informações</span>
-                    <span>Atendimento Geral</span>
+                    <span>Nome identificado</span>
+                    <span>Telefone capturado</span>
+                    <span>Necessidade clara</span>
+                    <span>Intenção classificada</span>
                 </div>
             </div>
         </section>
@@ -95,33 +96,35 @@
         <section class="records-panel">
             <div class="records-header">
                 <div>
-                    <h2>Histórico de conversas</h2>
-                    <p>Últimas interações processadas pelo agente inteligente</p>
+                    <h2>Conversas registradas</h2>
+                    <p>Lista de leads e atendimentos processados pelo agente</p>
                 </div>
             </div>
 
             <div class="records-list">
-                {% for item in dados %}
+                {% for conversa in conversas %}
                 <article class="record-card">
                     <div class="record-top">
                         <div>
-                            <span class="record-id">#{{ item[0] }}</span>
+                            <span class="record-id">#{{ conversa[0][:8] }}</span>
+
                             <h3>
-                                {% if item[6] %}
-                                    {{ item[6] }}
+                                {% if conversa[1] %}
+                                    {{ conversa[1] }}
                                 {% else %}
-                                    Cliente não identificado
+                                    Lead não identificado
                                 {% endif %}
                             </h3>
-                            <p>{{ item[3] }}</p>
+
+                            <p>Atualizado em {{ conversa[8] }}</p>
                         </div>
 
                         <div class="record-tags">
-                            <span class="tag intent">{{ item[4] }}</span>
+                            <span class="tag intent">{{ conversa[4] }}</span>
 
-                            {% if item[5] == 'Alta' %}
+                            {% if conversa[5] == 'Alta' %}
                                 <span class="tag high">Alta prioridade</span>
-                            {% elif item[5] == 'Média' %}
+                            {% elif conversa[5] == 'Média' %}
                                 <span class="tag medium">Média prioridade</span>
                             {% else %}
                                 <span class="tag normal">Normal</span>
@@ -131,36 +134,62 @@
 
                     <div class="record-contact">
                         <div>
-                            <span>Contato</span>
-                            {% if item[7] %}
-                                <strong>{{ item[7] }}</strong>
+                            <span>Telefone</span>
+                            {% if conversa[2] %}
+                                <strong>{{ conversa[2] }}</strong>
                             {% else %}
                                 <strong class="empty-info">Não informado</strong>
                             {% endif %}
                         </div>
 
                         <div>
-                            <span>Origem</span>
-                            <strong>Chat Web</strong>
+                            <span>Necessidade</span>
+                            {% if conversa[3] %}
+                                <strong>{{ conversa[3] }}</strong>
+                            {% else %}
+                                <strong class="empty-info">Em descoberta</strong>
+                            {% endif %}
                         </div>
 
                         <div>
-                            <span>Status</span>
-                            <strong>Registrado</strong>
+                            <span>Mensagens</span>
+                            <strong>{{ conversa[9] }}</strong>
                         </div>
                     </div>
 
                     <div class="conversation-box">
                         <div class="conversation-message client-msg">
-                            <span>Cliente</span>
-                            <p>{{ item[1] }}</p>
+                            <span>Status do lead</span>
+
+                            {% if conversa[1] and conversa[2] and conversa[3] %}
+                                <p>Lead qualificado: possui nome, telefone e necessidade identificada.</p>
+                            {% elif conversa[1] or conversa[2] %}
+                                <p>Lead parcial: possui alguns dados, mas ainda precisa ser qualificado.</p>
+                            {% else %}
+                                <p>Contato inicial: dados do cliente ainda não foram informados.</p>
+                            {% endif %}
                         </div>
 
                         <div class="conversation-message ai-msg">
-                            <span>Resposta da IA</span>
-                            <p>{{ item[2] }}</p>
+                            <span>Ação recomendada</span>
+
+                            {% if conversa[5] == 'Alta' %}
+                                <p>Priorizar retorno humano para este atendimento.</p>
+                            {% elif conversa[4] == 'Venda / Orçamento' %}
+                                <p>Encaminhar para equipe comercial elaborar proposta.</p>
+                            {% elif conversa[4] == 'Suporte Técnico' %}
+                                <p>Encaminhar para equipe técnica analisar o problema.</p>
+                            {% else %}
+                                <p>Continuar atendimento e coletar mais informações.</p>
+                            {% endif %}
                         </div>
                     </div>
+
+                    <br>
+
+                    <a href="/admin/conversa/{{ conversa[0] }}" class="admin-button">
+                        Ver histórico completo
+                    </a>
                 </article>
                 {% endfor %}
             </div>

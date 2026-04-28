@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalhes da Conversa | TechFix AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="admin-dashboard">
+
+    <aside class="dashboard-sidebar">
+        <div class="dashboard-brand">
+            <div class="dashboard-logo">⚡</div>
+            <div>
+                <h2>TechFix</h2>
+                <span>Histórico do Lead</span>
+            </div>
+        </div>
+
+        <nav class="dashboard-nav">
+            <a href="/admin" class="nav-item">← Voltar ao dashboard</a>
+            <a href="/" class="nav-item">💬 Chat</a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <span class="page-label">Histórico completo</span>
+
+                <h1>
+                    {% if conversa[1] %}
+                        {{ conversa[1] }}
+                    {% else %}
+                        Lead não identificado
+                    {% endif %}
+                </h1>
+
+                <p>Conversa iniciada em {{ conversa[7] }}</p>
+            </div>
+
+            <div class="header-actions">
+                <span class="system-pill">{{ conversa[4] }}</span>
+                <span class="system-pill green">{{ conversa[5] }}</span>
+            </div>
+        </header>
+
+        <section class="record-contact">
+            <div>
+                <span>Telefone</span>
+                {% if conversa[2] %}
+                    <strong>{{ conversa[2] }}</strong>
+                {% else %}
+                    <strong class="empty-info">Não informado</strong>
+                {% endif %}
+            </div>
+
+            <div>
+                <span>Necessidade</span>
+                {% if conversa[3] %}
+                    <strong>{{ conversa[3] }}</strong>
+                {% else %}
+                    <strong class="empty-info">Em descoberta</strong>
+                {% endif %}
+            </div>
+
+            <div>
+                <span>Status</span>
+                <strong>{{ conversa[6] }}</strong>
+            </div>
+        </section>
+
+        <section class="records-panel">
+            <div class="records-header">
+                <div>
+                    <h2>Mensagens da conversa</h2>
+                    <p>Histórico completo entre cliente e assistente</p>
+                </div>
+            </div>
+
+            <div class="records-list">
+                {% for msg in mensagens %}
+                    {% if msg[0] == 'cliente' %}
+                        <div class="conversation-message client-msg">
+                            <span>Cliente — {{ msg[2] }}</span>
+                            <p>{{ msg[1] }}</p>
+                        </div>
+                    {% else %}
+                        <div class="conversation-message ai-msg">
+                            <span>TechFix AI — {{ msg[2] }}</span>
+                            <p>{{ msg[1] }}</p>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>
