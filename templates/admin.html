@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | TechFix AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="admin-dashboard">
+
+    <aside class="dashboard-sidebar">
+        <div class="dashboard-brand">
+            <div class="dashboard-logo">⚡</div>
+            <div>
+                <h2>TechFix</h2>
+                <span>AI Control Center</span>
+            </div>
+        </div>
+
+        <nav class="dashboard-nav">
+            <a href="/" class="nav-item">💬 Chat do cliente</a>
+            <a href="/admin" class="nav-item active">📊 Dashboard</a>
+        </nav>
+
+        <div class="sidebar-card">
+            <span class="mini-label">STATUS</span>
+            <h3>Agente ativo</h3>
+            <p>Monitorando atendimentos, intenções e leads capturados.</p>
+        </div>
+    </aside>
+
+    <main class="dashboard-main">
+
+        <header class="dashboard-header">
+            <div>
+                <span class="page-label">Painel administrativo</span>
+                <h1>Atendimentos do Agente IA</h1>
+                <p>Visão gerencial das conversas, prioridades e oportunidades comerciais.</p>
+            </div>
+
+            <div class="header-actions">
+                <span class="system-pill">Groq API conectada</span>
+                <span class="system-pill green">Online</span>
+            </div>
+        </header>
+
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <span>Total de mensagens</span>
+                <strong>{{ total_mensagens }}</strong>
+                <p>Interações registradas</p>
+            </div>
+
+            <div class="kpi-card">
+                <span>Leads detectados</span>
+                <strong>{{ total_leads }}</strong>
+                <p>Nome ou telefone identificado</p>
+            </div>
+
+            <div class="kpi-card">
+                <span>Alta prioridade</span>
+                <strong>{{ alta_prioridade }}</strong>
+                <p>Casos urgentes</p>
+            </div>
+
+            <div class="kpi-card">
+                <span>Banco de dados</span>
+                <strong>SQLite</strong>
+                <p>Persistência local ativa</p>
+            </div>
+        </section>
+
+        <section class="analytics-grid">
+            <div class="analytics-card">
+                <h3>Resumo operacional</h3>
+                <p>
+                    O agente registra cada atendimento, identifica a intenção da mensagem,
+                    classifica prioridade e captura dados de contato quando informados pelo cliente.
+                </p>
+            </div>
+
+            <div class="analytics-card">
+                <h3>Fluxos atendidos</h3>
+                <div class="flow-list">
+                    <span>Venda / Orçamento</span>
+                    <span>Suporte Técnico</span>
+                    <span>Informações</span>
+                    <span>Atendimento Geral</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="records-panel">
+            <div class="records-header">
+                <div>
+                    <h2>Histórico de conversas</h2>
+                    <p>Últimas interações processadas pelo agente inteligente</p>
+                </div>
+            </div>
+
+            <div class="records-list">
+                {% for item in dados %}
+                <article class="record-card">
+                    <div class="record-top">
+                        <div>
+                            <span class="record-id">#{{ item[0] }}</span>
+                            <h3>
+                                {% if item[6] %}
+                                    {{ item[6] }}
+                                {% else %}
+                                    Cliente não identificado
+                                {% endif %}
+                            </h3>
+                            <p>{{ item[3] }}</p>
+                        </div>
+
+                        <div class="record-tags">
+                            <span class="tag intent">{{ item[4] }}</span>
+
+                            {% if item[5] == 'Alta' %}
+                                <span class="tag high">Alta prioridade</span>
+                            {% elif item[5] == 'Média' %}
+                                <span class="tag medium">Média prioridade</span>
+                            {% else %}
+                                <span class="tag normal">Normal</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="record-contact">
+                        <div>
+                            <span>Contato</span>
+                            {% if item[7] %}
+                                <strong>{{ item[7] }}</strong>
+                            {% else %}
+                                <strong class="empty-info">Não informado</strong>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <span>Origem</span>
+                            <strong>Chat Web</strong>
+                        </div>
+
+                        <div>
+                            <span>Status</span>
+                            <strong>Registrado</strong>
+                        </div>
+                    </div>
+
+                    <div class="conversation-box">
+                        <div class="conversation-message client-msg">
+                            <span>Cliente</span>
+                            <p>{{ item[1] }}</p>
+                        </div>
+
+                        <div class="conversation-message ai-msg">
+                            <span>Resposta da IA</span>
+                            <p>{{ item[2] }}</p>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>

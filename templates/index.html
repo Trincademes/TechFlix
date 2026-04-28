@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechFix AI Assistant</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="background-blur blur-1"></div>
+<div class="background-blur blur-2"></div>
+
+<div class="main-wrapper">
+
+    <aside class="left-panel">
+        <div class="brand">
+            <div class="brand-icon">⚡</div>
+            <div>
+                <h1>TechFix</h1>
+                <p>Soluções Digitais</p>
+            </div>
+        </div>
+
+        <div class="agent-card">
+            <div class="agent-avatar">🤖</div>
+            <h2>AI Assistant</h2>
+            <p>Atendimento inteligente para suporte, orçamento e dúvidas comerciais.</p>
+
+            <div class="online-status">
+                <span></span>
+                Agente online agora
+            </div>
+        </div>
+
+        <div class="services-card">
+            <h3>Serviços atendidos</h3>
+            <div class="service-item">💻 Criação de sites</div>
+            <div class="service-item">🛠 Suporte técnico</div>
+            <div class="service-item">⚙ Automação de processos</div>
+            <div class="service-item">📊 Sistemas web</div>
+        </div>
+
+        <a href="/admin" class="admin-button">Acessar painel admin</a>
+    </aside>
+
+    <main class="chat-wrapper">
+        <header class="chat-topbar">
+            <div class="chat-user">
+                <div class="avatar">
+                    <span>🤖</span>
+                    <div class="pulse"></div>
+                </div>
+
+                <div>
+                    <h2>TechFix AI Assistant</h2>
+                    <p>Normalmente responde em poucos segundos</p>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <span class="model-badge">Groq API</span>
+                <span class="status-badge">Online</span>
+            </div>
+        </header>
+
+        <section class="chat-container">
+            <div id="chat-box" class="chat-box">
+                <div class="message-row bot-row">
+                    <div class="small-avatar">🤖</div>
+                    <div class="message bot">
+                        <span class="message-author">TechFix AI</span>
+                        Olá! Sou o assistente virtual da TechFix Soluções Digitais. Posso ajudar com orçamento, suporte técnico ou dúvidas sobre nossos serviços. Como posso te ajudar hoje?
+                    </div>
+                </div>
+            </div>
+
+            <div class="suggestions">
+                <button onclick="quickMessage('Quero fazer um orçamento para um site')">💰 Quero orçamento</button>
+                <button onclick="quickMessage('Preciso de suporte técnico')">🛠 Preciso de suporte</button>
+                <button onclick="quickMessage('Quais serviços vocês oferecem?')">📋 Ver serviços</button>
+                <button onclick="quickMessage('Qual o horário de atendimento?')">🕒 Horário</button>
+            </div>
+
+            <div class="input-box">
+                <input 
+                    type="text" 
+                    id="message" 
+                    placeholder="Digite sua mensagem para o agente..." 
+                    onkeydown="handleEnter(event)"
+                    autocomplete="off"
+                >
+                <button onclick="sendMessage()">
+                    <span>Enviar</span>
+                    ➤
+                </button>
+            </div>
+
+            <p class="chat-footer">
+                As mensagens são registradas para análise no painel administrativo.
+            </p>
+        </section>
+    </main>
+
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
