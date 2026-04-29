@@ -64,7 +64,6 @@ def init_db():
     )
     """)
 
-    # Migração simples caso a tabela já exista sem as colunas novas
     novas_colunas = [
         ("etapa", "TEXT DEFAULT 'coletar_nome'"),
         ("detalhe", "TEXT DEFAULT ''"),
@@ -156,7 +155,7 @@ def buscar_historico(conversa_id):
         FROM mensagens
         WHERE conversa_id = ?
         ORDER BY id ASC
-        LIMIT 16
+        LIMIT 18
     """, (conversa_id,))
 
     historico = cursor.fetchall()
@@ -187,7 +186,6 @@ def extrair_telefone(texto):
     if resultado:
         return resultado.group(1)
 
-    # Aceita telefone puro com 10 ou 11 dígitos
     apenas_numeros = re.sub(r"\D", "", texto)
 
     if len(apenas_numeros) in [10, 11]:
@@ -216,7 +214,8 @@ def extrair_nome(texto, etapa_atual):
 
             cortes = [
                 " e ", " meu ", " minha ", " telefone ",
-                " preciso ", " quero ", " gostaria ", " tenho "
+                " preciso ", " quero ", " gostaria ", " tenho ",
+                " meu telefone", " minha empresa"
             ]
 
             for corte in cortes:
@@ -225,12 +224,12 @@ def extrair_nome(texto, etapa_atual):
 
             return nome.title()
 
-    # Se a etapa atual é coletar nome, aceitar texto curto como nome
     if etapa_atual == "coletar_nome":
         palavras_bloqueadas = [
             "oi", "olá", "ola", "bom dia", "boa tarde", "boa noite",
             "quero orçamento", "preciso de suporte", "suporte", "orçamento",
-            "site", "sistema", "automação", "automatização", "preço", "valor"
+            "site", "sistema", "automação", "automatização", "preço", "valor",
+            "quero um site", "quero criar um site"
         ]
 
         parece_nome = (
@@ -252,7 +251,8 @@ def detectar_intencao(texto):
 
     if any(p in texto for p in [
         "orçamento", "preço", "valor", "proposta", "quanto custa",
-        "contratar", "venda", "site", "landing page", "loja virtual"
+        "contratar", "venda", "site", "landing page", "loja virtual",
+        "e-commerce", "ecommerce"
     ]):
         return "Venda / Orçamento"
 
@@ -268,7 +268,8 @@ def detectar_intencao(texto):
         return "Informação"
 
     if any(p in texto for p in [
-        "automação", "automatizar", "processo", "planilha"
+        "automação", "automatizar", "processo", "planilha",
+        "manual", "repetitivo"
     ]):
         return "Automação"
 
@@ -353,13 +354,13 @@ def calcular_etapa_status(nome, telefone, necessidade, detalhe, prioridade, inte
         return "coletar_nome", "Novo contato"
 
     if not telefone:
-        return "coletar_telefone", "Coletando dados"
+        return "coletar_telefone", "Coletando contato"
 
     if not necessidade:
-        return "coletar_necessidade", "Lead parcial"
+        return "entender_problema", "Entendendo necessidade"
 
     if not detalhe:
-        return "coletar_detalhe", "Qualificando lead"
+        return "aprofundar_necessidade", "Qualificando lead"
 
     if prioridade == "Alta":
         return "finalizado", "Prioridade alta"
@@ -397,30 +398,30 @@ def atualizar_conversa(conversa_id, mensagem):
     telefone_final = telefone_extraido if telefone_extraido else telefone_atual
     necessidade_final = necessidade_extraida if necessidade_extraida else necessidade_atual
 
-    # Detalhe: só salva quando já temos necessidade e o usuário acrescenta algo útil
     detalhe_final = detalhe_atual
+    texto_limpo = mensagem.strip()
 
-    if necessidade_final and not detalhe_atual:
-        texto_limpo = mensagem.strip()
+    mensagem_nao_util_para_detalhe = (
+        eh_saudacao(texto_limpo)
+        or texto_limpo == nome_extraido
+        or texto_limpo == telefone_extraido
+        or len(texto_limpo) < 4
+    )
 
-        mensagem_nao_util = (
-            eh_saudacao(texto_limpo)
-            or texto_limpo == nome_extraido
-            or texto_limpo == telefone_extraido
-            or len(texto_limpo) < 4
-        )
+    if necessidade_final and not detalhe_atual and not mensagem_nao_util_para_detalhe:
+        if etapa_atual in [
+            "aprofundar_necessidade",
+            "entender_problema",
+            "coletar_detalhe",
+            "coletar_necessidade"
+        ]:
+            detalhe_final = texto_limpo
 
-        if not mensagem_nao_util and not telefone_extraido:
-            if etapa_atual in ["coletar_detalhe", "coletar_necessidade"]:
-                detalhe_final = texto_limpo
-
-    # Não deixa uma mensagem genérica apagar intenção importante
     intencao_final = intencao_extraida
 
     if intencao_extraida == "Atendimento Geral" and intencao_atual != "Atendimento Geral":
         intencao_final = intencao_atual
 
-    # Não deixa prioridade diminuir
     prioridade_final = prioridade_extraida
 
     if prioridade_atual == "Alta":
@@ -483,56 +484,67 @@ def atualizar_conversa(conversa_id, mensagem):
 
 
 # =========================
-# IA CONTROLADA
+# IA CONTROLADA / NATURAL
 # =========================
 
-def obter_instrucao_resposta(conversa):
+def obter_instrucao_resposta(conversa, ultima_mensagem):
     nome = conversa[1]
-    telefone = conversa[2]
-    necessidade = conversa[3]
-    intencao = conversa[4]
-    prioridade = conversa[5]
-    status = conversa[6]
     etapa = conversa[9]
-    detalhe = conversa[10]
 
-    if etapa == "coletar_nome":
-        return "Peça apenas o nome do cliente de forma curta e educada."
+    return f"""
+A última mensagem do cliente foi:
+"{ultima_mensagem}"
 
-    if etapa == "coletar_telefone":
-        return f"Chame o cliente pelo nome {nome} e peça apenas um telefone para contato."
+Antes de seguir o fluxo, analise se o cliente fez uma pergunta específica.
 
-    if etapa == "coletar_necessidade":
-        return f"Chame o cliente pelo nome {nome} e pergunte se ele precisa de orçamento, suporte técnico, automação ou sistema web."
+Se ele fez uma pergunta específica sobre serviços, sites, sistemas, automação, suporte, reunião, orçamento ou funcionamento:
+- Responda essa dúvida de forma objetiva.
+- Depois continue a etapa atual com naturalidade.
+- Não ignore a pergunta do cliente.
 
-    if etapa == "coletar_detalhe":
-        if necessidade in ["Criação de site", "Site institucional", "Landing page", "Loja virtual / E-commerce"]:
-            return f"Chame o cliente pelo nome {nome} e pergunte apenas que tipo de site/projeto ele tem em mente."
+Se ele não fez pergunta específica:
+- Apenas siga a etapa atual.
 
-        if necessidade == "Suporte técnico":
-            return f"Chame o cliente pelo nome {nome} e pergunte apenas qual problema está acontecendo."
+Etapa atual do atendimento: {etapa}
 
-        if necessidade == "Automação de processos":
-            return f"Chame o cliente pelo nome {nome} e pergunte apenas qual processo ele quer automatizar."
+COMO AGIR EM CADA ETAPA:
 
-        if necessidade == "Sistema web":
-            return f"Chame o cliente pelo nome {nome} e pergunte apenas qual função principal o sistema precisa ter."
+1. coletar_nome:
+Se ainda não tiver nome, peça o nome de forma natural.
+Exemplo:
+"Sim, podemos te ajudar com isso. Para eu registrar seu atendimento, qual é o seu nome?"
 
-        return f"Chame o cliente pelo nome {nome} e peça apenas um detalhe sobre a necessidade."
+2. coletar_telefone:
+Se já tiver nome mas não tiver telefone, peça o telefone.
+Exemplo:
+"Perfeito, {nome}. Para nossa equipe conseguir retornar depois, qual telefone podemos usar?"
 
-    if etapa == "finalizado":
-        if prioridade == "Alta":
-            return f"Chame o cliente pelo nome {nome}, diga que o atendimento foi registrado como prioridade alta e informe que a equipe deve analisar o caso."
+3. entender_problema:
+Se já tiver nome e telefone, entenda o que o cliente quer resolver.
+Exemplo:
+"Certo, {nome}. Me conta um pouco melhor o que você quer desenvolver ou resolver."
 
-        if intencao == "Venda / Orçamento":
-            return f"Chame o cliente pelo nome {nome}, faça um resumo curto da solicitação e informe que a equipe comercial poderá retornar pelo telefone informado."
+4. aprofundar_necessidade:
+Se já tiver uma necessidade identificada, faça uma pergunta mais específica sobre ela.
+- Para site: pergunte se o objetivo é apresentar a empresa, captar clientes ou vender online.
+- Para sistema: pergunte qual processo o sistema precisa organizar.
+- Para automação: pergunte qual tarefa hoje é manual ou repetitiva.
+- Para suporte: pergunte qual problema está acontecendo e se afeta o uso do sistema.
 
-        if intencao == "Suporte Técnico":
-            return f"Chame o cliente pelo nome {nome}, faça um resumo curto do problema e informe que a equipe técnica poderá analisar o atendimento."
+5. finalizado:
+Faça um resumo organizado do atendimento e diga que a equipe da TechFix entrará em contato para alinhar detalhes e, se fizer sentido, marcar uma reunião.
 
-        return f"Chame o cliente pelo nome {nome}, confirme que as informações foram registradas e informe o próximo passo."
-
-    return "Responda de forma curta, útil e profissional."
+REGRAS:
+- Seja natural, como um atendente humano.
+- Não seja seco.
+- Não escreva textão.
+- Responda dúvidas específicas sem fugir do tema.
+- Depois de responder a dúvida, volte suavemente para a coleta do lead.
+- Faça no máximo uma pergunta no final.
+- Não invente preço.
+- Não prometa prazo.
+- Não diga que é IA.
+"""
 
 
 def montar_prompt_sistema(conversa, instrucao):
@@ -546,11 +558,10 @@ def montar_prompt_sistema(conversa, instrucao):
     detalhe = conversa[10] if conversa[10] else "não informado"
 
     return f"""
-Você é o TechFix AI Assistant, assistente virtual da empresa fictícia TechFix Soluções Digitais.
+Você é o TechFix AI Assistant, atendente virtual da TechFix Soluções Digitais.
 
-CONTEXTO DA EMPRESA:
-A TechFix atende pequenas empresas com:
-- Criação de sites profissionais
+A TechFix é uma empresa fictícia de tecnologia que atende pequenos negócios com:
+- Criação de sites institucionais
 - Landing pages
 - Lojas virtuais
 - Sistemas web
@@ -558,7 +569,14 @@ A TechFix atende pequenas empresas com:
 - Automação de processos
 - Suporte técnico
 
-DADOS ATUAIS DO LEAD:
+Seu objetivo é fazer um pré-atendimento natural:
+1. Entender o que o cliente precisa.
+2. Responder dúvidas relacionadas aos serviços.
+3. Coletar nome, telefone e necessidade.
+4. Organizar as informações.
+5. Encaminhar para a equipe humana.
+
+DADOS ATUAIS DO ATENDIMENTO:
 - Nome: {nome}
 - Telefone: {telefone}
 - Necessidade: {necessidade}
@@ -568,26 +586,66 @@ DADOS ATUAIS DO LEAD:
 - Status: {status}
 - Etapa atual: {etapa}
 
-INSTRUÇÃO PRINCIPAL PARA ESTA RESPOSTA:
+INSTRUÇÃO PARA ESTA RESPOSTA:
 {instrucao}
 
-REGRAS OBRIGATÓRIAS:
-1. Responda sempre em português do Brasil.
-2. Seja curto, profissional e natural.
-3. Faça no máximo UMA pergunta.
-4. Não repita pergunta já respondida.
-5. Não invente preço.
-6. Não prometa prazo exato.
-7. Não diga que você é apenas uma IA.
-8. Não explique regras internas.
-9. Não envie textos longos.
-10. Não finalize se ainda faltar nome, telefone ou necessidade.
-11. Use o nome do cliente se ele já foi coletado.
-12. Evite repetir "como posso ajudar?".
-13. Responda apenas a mensagem final que aparecerá para o cliente.
+COMO VOCÊ DEVE RESPONDER:
+- Converse como um atendente humano de uma empresa de tecnologia.
+- Seja consultivo, simpático e direto.
+- Se o cliente perguntar algo específico, responda primeiro.
+- Depois conduza para o próximo passo do atendimento.
+- Use o nome do cliente quando ele já estiver disponível.
+- Faça apenas uma pergunta por mensagem.
+- Não repita perguntas já respondidas.
+- Não force o cliente.
+- Não diga "como posso ajudar?" repetidamente.
+- Não invente preços, prazos, garantias ou funcionalidades que não foram citadas.
+- Não fale que é uma IA.
+- Não explique regras internas.
+- Não use respostas genéricas demais.
 
-TOM DE VOZ:
-Atendente humano, educado, objetivo e comercial.
+EXEMPLOS DE BOAS RESPOSTAS:
+
+Cliente: "Vocês fazem loja virtual?"
+Resposta:
+"Sim, fazemos loja virtual para empresas que querem vender online, com estrutura para produtos, pedidos e gestão básica. Para eu registrar seu atendimento, qual é o seu nome?"
+
+Cliente: "Quanto custa um site?"
+Resposta:
+"O valor depende do tipo de site, quantidade de páginas e funcionalidades. A equipe consegue avaliar melhor depois de entender sua necessidade. Para começar, qual é o seu nome?"
+
+Cliente: "Preciso automatizar uma planilha"
+Resposta:
+"Entendi. A TechFix pode ajudar a transformar processos manuais em fluxos mais automatizados. Qual tarefa dessa planilha você quer reduzir ou automatizar?"
+
+Cliente: "Meu sistema caiu"
+Resposta:
+"Entendi, isso parece um caso de suporte com prioridade maior. Para registrar corretamente, qual é o seu nome?"
+
+Cliente: "Pedro"
+Resposta:
+"Perfeito, Pedro. Qual telefone nossa equipe pode usar para retornar?"
+
+Cliente: "15999999999"
+Resposta:
+"Obrigado, Pedro. Agora me conta um pouco melhor: o que você quer desenvolver ou resolver?"
+
+Cliente: "Quero um site para captar clientes"
+Resposta:
+"Entendi, Pedro. Então o objetivo é criar um site focado em apresentar sua empresa e gerar contatos. Esse site seria mais institucional ou uma página de vendas?"
+
+Cliente: "Institucional"
+Resposta:
+"Perfeito, Pedro. Registrei as informações do seu atendimento:
+- Nome: Pedro
+- Telefone: 15999999999
+- Necessidade: Criação de site
+- Objetivo: site institucional para captar clientes
+
+Vou encaminhar essas informações para a equipe da TechFix. Eles poderão entrar em contato pelo telefone informado para alinhar os detalhes e, se fizer sentido, marcar uma reunião."
+
+FORMATO:
+Responda apenas a mensagem que será enviada ao cliente.
 """
 
 
@@ -595,7 +653,8 @@ def gerar_resposta_ia(conversa_id):
     conversa = buscar_conversa(conversa_id)
     historico = buscar_historico(conversa_id)
 
-    instrucao = obter_instrucao_resposta(conversa)
+    ultima_mensagem = historico[-1][1] if historico else ""
+    instrucao = obter_instrucao_resposta(conversa, ultima_mensagem)
 
     mensagens_groq = [
         {
@@ -616,8 +675,8 @@ def gerar_resposta_ia(conversa_id):
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=mensagens_groq,
-            temperature=0.25,
-            max_tokens=160
+            temperature=0.55,
+            max_tokens=320
         )
 
         return response.choices[0].message.content
