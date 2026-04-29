@@ -72,31 +72,10 @@ Ele não apenas responde mensagens, mas também conduz a conversa de forma estra
 
 ---
 
-## 💬 Exemplo de Conversa
+---
 
-```text
-Cliente: Olá, vocês fazem loja virtual?
+## 🔗 Link para Testar o Projeto
 
-Agente: Sim, fazemos loja virtual para empresas que querem vender online, com estrutura para produtos, pedidos e gestão básica. Para eu registrar seu atendimento, qual é o seu nome?
+A aplicação está disponível online pelo Render:
 
-Cliente: Pedro
-
-Agente: Perfeito, Pedro. Para nossa equipe conseguir retornar depois, qual telefone podemos usar?
-
-Cliente: 15999999999
-
-Agente: Obrigado, Pedro. Me conta um pouco melhor: o que você quer desenvolver ou resolver?
-
-Cliente: Quero uma loja virtual para vender roupas
-
-Agente: Entendi, Pedro. Então você está buscando uma loja virtual para vender roupas online. Você pretende vender poucos produtos inicialmente ou já terá um catálogo maior?
-
-Cliente: Vou começar com poucos produtos
-
-Agente: Perfeito, Pedro. Registrei as informações do seu atendimento:
-- Nome: Pedro
-- Telefone: 15999999999
-- Necessidade: Loja virtual / E-commerce
-- Objetivo: começar com poucos produtos
-
-Vou encaminhar essas informações para a equipe da TechFix. Eles poderão entrar em contato pelo telefone informado para alinhar os detalhes e, se fizer sentido, marcar uma reunião.
+👉 [Acessar TechFix AI Assistant](https://techflix-3bnw.onrender.com/)
